@@ -1,4 +1,3 @@
-
 const ROWS = 4;
 const NUMBERS =[2,4];
 
@@ -25,6 +24,8 @@ cc.Class({
             default: null,
             type: cc.Label
         },
+
+        MinLength: 0, // 最小滑动距离
     },
 
     /**
@@ -136,10 +137,63 @@ cc.Class({
         return locations;
     },
 
+    // 添加触摸监听
+    eventHandler: function(){
+        this.layoutNode.on("touchstart",(event)=>{// 箭头函数中的 this 依旧指向全局的 this
+            this.startPoint=event.getLocation();
+            //cc.log(this.startPoint);
+        })
+        this.layoutNode.on("touchend",(event)=>{
+            this.endPoint=event.getLocation();
+            this.reflectTouch();
+            //cc.log(this.endPoint);
+        })
+        this.layoutNode.on("touchcancel",(event)=>{
+            this.endPoint=event.getLocation();
+            this.reflectTouch();
+            //cc.log(this.endPoint);
+        })    
+    },
+
+    // 响应触摸事件
+    reflectTouch: function(){
+        let startVec = this.startPoint;
+        let endVec = this.endPoint;
+        let pointsVec = endVec.sub(startVec);
+        let VecLength = pointsVec.mag(); // 返回向量长度
+        if(VecLength > this.MinLength){
+            //cc.log(pointsVec);
+            if(Math.abs(pointsVec.x)>Math.abs(pointsVec.y)){
+                // 水平方向响应
+                if(pointsVec.x>0) this.moveRight();
+                else this.moveLeft();
+            }
+            else{
+                // 垂直方向响应
+                if(pointsVec.y>0) this.moveUp();
+                else this.moveDown();
+            }
+        }
+
+    },
+    moveRight:function(){
+        cc.log("move right");
+    },
+    moveLeft:function(){
+        cc.log("move left");
+    },
+    moveUp:function(){
+        cc.log("move up");
+    },
+    moveDown:function(){
+        cc.log("move down");
+    },
+
 
     onLoad() {
         this.blockInit();
         this.gameInit();
+        this.eventHandler();
         this.count = 0; // 用来记录onLoad调用的次数
         this.count++;
         cc.log("onLoad的执行次数: " + this.count);
