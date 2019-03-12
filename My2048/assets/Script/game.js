@@ -183,6 +183,7 @@ cc.Class({
 
                 else this.moveBlock(DIRECTION.DOWN);
             }
+            this.addBlock();
         }
 
     },
