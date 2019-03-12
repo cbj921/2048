@@ -1,5 +1,12 @@
 const ROWS = 4;
-const NUMBERS =[2,4];
+const NUMBERS = [2, 4];
+const DIRECTION = cc.Enum({
+    RIGHT: -1,
+    LEFT: -1,
+    UP: -1,
+    DOWN: -1
+});
+
 
 cc.Class({
     extends: cc.Component,
@@ -26,6 +33,7 @@ cc.Class({
         },
 
         MinLength: 0, // 最小滑动距离
+        duration: 0, //数字块滑动时间
     },
 
     /**
@@ -67,7 +75,7 @@ cc.Class({
                 this.blockArr[n][i] = block;
             }
         }
-        
+
     },
 
     /**
@@ -98,8 +106,8 @@ cc.Class({
         this.addBlock();
         this.addBlock();
         this.addBlock();
-        cc.log( this.blockArr);
-        cc.log( this.data);
+        cc.log(this.blockArr);
+        cc.log(this.data);
 
     },
 
@@ -110,9 +118,9 @@ cc.Class({
      */
     addBlock: function () {
         let locations = this.getEmptyLocations();
-        if(locations.length == 0) return false;
-        let location = locations[Math.floor(Math.random()*locations.length)];
-        this.data[location.x][location.y] = NUMBERS[Math.floor(Math.random()*NUMBERS.length)];
+        if (locations.length == 0) return false;
+        let location = locations[Math.floor(Math.random() * locations.length)];
+        this.data[location.x][location.y] = NUMBERS[Math.floor(Math.random() * NUMBERS.length)];
         let block = this.blockArr[location.x][location.y].getComponent("block");
         block.setNumber(this.data[location.x][location.y]);
     },
@@ -138,56 +146,221 @@ cc.Class({
     },
 
     // 添加触摸监听
-    eventHandler: function(){
-        this.layoutNode.on("touchstart",(event)=>{// 箭头函数中的 this 依旧指向全局的 this
-            this.startPoint=event.getLocation();
+    eventHandler: function () {
+        this.layoutNode.on("touchstart", (event) => {// 箭头函数中的 this 依旧指向全局的 this
+            this.startPoint = event.getLocation();
             //cc.log(this.startPoint);
         })
-        this.layoutNode.on("touchend",(event)=>{
-            this.endPoint=event.getLocation();
+        this.layoutNode.on("touchend", (event) => {
+            this.endPoint = event.getLocation();
             this.reflectTouch();
             //cc.log(this.endPoint);
         })
-        this.layoutNode.on("touchcancel",(event)=>{
-            this.endPoint=event.getLocation();
+        this.layoutNode.on("touchcancel", (event) => {
+            this.endPoint = event.getLocation();
             this.reflectTouch();
             //cc.log(this.endPoint);
-        })    
+        })
     },
 
     // 响应触摸事件
-    reflectTouch: function(){
+    reflectTouch: function () {
         let startVec = this.startPoint;
         let endVec = this.endPoint;
         let pointsVec = endVec.sub(startVec);
         let VecLength = pointsVec.mag(); // 返回向量长度
-        if(VecLength > this.MinLength){
+        if (VecLength > this.MinLength) {
             //cc.log(pointsVec);
-            if(Math.abs(pointsVec.x)>Math.abs(pointsVec.y)){
+            if (Math.abs(pointsVec.x) > Math.abs(pointsVec.y)) {
                 // 水平方向响应
-                if(pointsVec.x>0) this.moveRight();
-                else this.moveLeft();
+                if (pointsVec.x > 0) this.moveBlock(DIRECTION.RIGHT);
+
+                else this.moveBlock(DIRECTION.LEFT);
             }
-            else{
+            else {
                 // 垂直方向响应
-                if(pointsVec.y>0) this.moveUp();
-                else this.moveDown();
+                if (pointsVec.y > 0) this.moveBlock(DIRECTION.UP);
+
+                else this.moveBlock(DIRECTION.DOWN);
             }
         }
 
     },
-    moveRight:function(){
-        cc.log("move right");
+
+    /**
+     * @description: 方块移动方向函数
+     * @param {cc.Enum} direction: 方向
+     * @return: 
+     */
+    moveBlock: function (direction) {
+        switch (direction) {
+            case DIRECTION.RIGHT: {
+                cc.log("move right");
+                for (let row = 0; row < ROWS; row++) {
+                    this.blockMoveRight(row, 0);
+                }
+                //this.updateBlockNum();
+                break;
+            }
+            case DIRECTION.LEFT: {
+                cc.log("move left");
+                for (let row = 0; row < ROWS; row++) {
+                    this.blockMoveLeft(row, ROWS-1); 
+                }
+                //cc.log(this.data);
+                break;
+            }
+            case DIRECTION.UP: {
+                cc.log("move up");
+                for (let col = 0; col < ROWS; col++) {
+                    this.blockMoveUp(ROWS-1, col);
+                }
+                break;
+            }
+            case DIRECTION.DOWN: {
+                cc.log("move down");
+                for (let col = 0; col < ROWS; col++) {
+                    this.blockMoveDown(0, col);
+                }
+                break;
+            }
+        }
     },
-    moveLeft:function(){
-        cc.log("move left");
+
+    updateBlockNum: function () {
+        // 更新方块数字
+        for (let row = 0; row < ROWS; row++) {
+            for (let col = 0; col < ROWS; col++) {
+                this.blockArr[row][col].getComponent("block").setNumber(this.data[row][col]);
+            }
+        }
     },
-    moveUp:function(){
-        cc.log("move up");
+
+    /**
+     * @description: 向右移动方块函数
+     * @param {Number}  row: 行数
+     * @param {Number}  col: 列数
+     * @return: 
+     */
+    blockMoveRight: function (row, col) {
+        if (col == ROWS-1) {
+            //cc.log("不移动");// test
+            return;
+        }
+        else {
+            if (this.data[row][col + 1] == 0) {
+                this.data[row][col + 1] = this.data[row][col];
+                this.data[row][col] = 0;
+                this.blockMoveRight(row, col + 1); // 递归
+                this.updateBlockNum();  // 更行方块对应数字颜色
+            }
+            else {
+                if (col < ROWS-1) {
+                    if (this.data[row][col] == this.data[row][col + 1]) {
+                        this.data[row][col + 1] *= 2;
+                        this.data[row][col] = 0;
+                    }
+                    this.blockMoveRight(row, col + 1);
+                    if (this.data[row][col + 1] == 0) {
+                        this.data[row][col + 1] = this.data[row][col];
+                        this.data[row][col] = 0;
+                        this.updateBlockNum();
+                    }
+                }
+            }
+        }
+
     },
-    moveDown:function(){
-        cc.log("move down");
+
+    blockMoveLeft: function (row, col) {
+        if (col == 0) {
+            //cc.log("不移动");// test
+            return;
+        }
+        else {
+            if (this.data[row][col - 1] == 0) {
+                this.data[row][col - 1] = this.data[row][col];
+                this.data[row][col] = 0;
+                this.blockMoveLeft(row, col - 1); 
+                this.updateBlockNum();  // 更行方块对应数字颜色
+            }
+            else {
+                if (col >0) {
+                    if (this.data[row][col] == this.data[row][col - 1]) {
+                        this.data[row][col - 1] *= 2;
+                        this.data[row][col] = 0;
+                    }
+                    this.blockMoveLeft(row, col - 1);
+                    if (this.data[row][col - 1] == 0) {
+                        this.data[row][col - 1] = this.data[row][col];
+                        this.data[row][col] = 0;
+                        this.updateBlockNum();
+                    }
+                }
+            }
+        }
+
     },
+
+    blockMoveUp: function (row, col) {
+        if (row == 0) {
+            //cc.log("不移动");// test
+            return;
+        }
+        else {
+            if (this.data[row - 1][col] == 0) {
+                this.data[row - 1][col] = this.data[row][col];
+                this.data[row][col] = 0;
+                this.blockMoveUp(row - 1, col); 
+                this.updateBlockNum();  // 更行方块对应数字颜色
+            }
+            else {
+                if (row > 0) {
+                    if (this.data[row][col] == this.data[row - 1][col]) {
+                        this.data[row - 1][col] *= 2;
+                        this.data[row][col] = 0;
+                    }
+                    this.blockMoveUp(row - 1, col);
+                    if (this.data[row - 1][col] == 0) {
+                        this.data[row - 1][col] = this.data[row][col];
+                        this.data[row][col] = 0;
+                        this.updateBlockNum();
+                    }
+                }
+            }
+        }
+    },
+
+    blockMoveDown: function (row, col) {
+        if (row == ROWS - 1) {
+            //cc.log("不移动");// test
+            return;
+        }
+        else {
+            if (this.data[row + 1][col] == 0) {
+                this.data[row + 1][col] = this.data[row][col];
+                this.data[row][col] = 0;
+                this.blockMoveDown(row + 1, col); 
+                this.updateBlockNum();  // 更行方块对应数字颜色
+            }
+            else {
+                if (row < ROWS - 1) {
+                    if (this.data[row][col] == this.data[row + 1][col]) {
+                        this.data[row + 1][col] *= 2;
+                        this.data[row][col] = 0;
+                    }
+                    this.blockMoveDown(row + 1, col);
+                    if (this.data[row + 1][col] == 0) {
+                        this.data[row + 1][col] = this.data[row][col];
+                        this.data[row][col] = 0;
+                        this.updateBlockNum();
+                    }
+                }
+            }
+        }
+    },
+
+
 
 
     onLoad() {

@@ -12,7 +12,10 @@ cc.Class({
     },
 
     setNumber: function(number){
-        if(number == 0 ) this.labelNum.node.active = false;
+        if(number == 0 ) {
+            this.labelNum.node.active = false;
+            this.node.color = colors[0];
+        }
         else{
             this.labelNum.string = number;
             this.labelNum.node.active = true;

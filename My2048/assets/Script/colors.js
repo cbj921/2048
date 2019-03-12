@@ -1,6 +1,6 @@
 var colors = [];
 
-colors[0] = cc.color(198,184,172,255);
+colors[0] = cc.color(245,245,220,255);
 colors[2] = cc.color(235,224,213,255);
 colors[4] = cc.color(234,219,193,255);
 colors[8] = cc.color(240,167,110,255);
